@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Article Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B; /* Coral for primary elements */
+            --primary-dark: #E55A5A; /* Darker coral for hover */
+            --accent: #4ECDC4; /* Teal for highlights */
+            --bg-cream: #FFF8E7; /* Soft cream background */
+            --text-dark: #2D3436; /* Dark gray for text */
+            --text-light: #636E72; /* Light gray for secondary text */
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: var(--bg-cream);
+            color: var(--text-dark);
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .logo:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .navbar ul li a {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            position: relative;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .navbar ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .navbar ul li a:hover::after {
+            width: 100%;
+        }
+
+        .navbar ul li a:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        #menu-bar {
+            display: none;
+        }
+
+        .menu-label {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: none;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: background 0.3s ease;
+            position: relative;
+            width: 30px;
+            height: 30px;
+        }
+
+        .menu-label:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .menu-label span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-dark);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .menu-label span:nth-child(1) {
+            top: 8px;
+        }
+
+        .menu-label span:nth-child(2) {
+            top: 14px;
+        }
+
+        .menu-label span:nth-child(3) {
+            top: 20px;
+        }
+
+        #menu-bar:checked ~ .menu-label span:nth-child(1) {
+            transform: translateX(-50%) rotate(45deg);
+            top: 14px;
+        }
+
+        #menu-bar:checked ~ .menu-label span:nth-child(2) {
+            opacity: 0;
+        }
+
+        #menu-bar:checked ~ .menu-label span:nth-child(3) {
+            transform: translateX(-50%) rotate(-45deg);
+            top: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            .menu-label {
+                display: block;
+            }
+
+            .navbar {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                display: none;
+                flex-direction: column;
+                padding: 1rem;
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+                border-radius: 0 0 0.5rem 0.5rem;
+                transform: translateY(-20px);
+                opacity: 0;
+                transition: transform 0.3s ease, opacity 0.3s ease;
+            }
+
+            .navbar.active {
+                display: flex;
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .navbar ul {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .navbar ul li {
+                width: 100%;
+            }
+
+            .navbar ul li a {
+                padding: 0.75rem;
+                border-radius: 0.25rem;
+            }
+        }
+
+        /* Card styles */
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(45deg, var(--primary), var(--accent)) border-box;
+            transition: box-shadow 0.4s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Input and button styles */
+        input {
+            background: #F7FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+            outline: none;
+        }
+
+        input.valid {
+            border-color: var(--accent);
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%234ECDC4" viewBox="0 0 16 16"><path d="M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z"/></svg>') no-repeat right 0.75rem center;
+        }
+
+        input.invalid {
+            border-color: var(--primary-dark);
+            animation: shake 0.3s ease;
+        }
+
+        button {
+            background: var(--primary);
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem;
+            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease, scale 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        button:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        /* Loading animation */
+        .load {
+            width: 50px;
+            height: 50px;
+            margin: 2rem auto;
+            border: 4px solid var(--accent);
+            border-radius: 50%;
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+            animation: rotate 0.8s infinite linear;
+            filter: drop-shadow(0 0 8px rgba(78, 205, 196, 0.5));
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error-message {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--primary-dark);
+            text-align: center;
+            transform: translateX(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .error-message.visible {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .error-message .close-btn {
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--primary-dark);
+            margin-left: 0.5rem;
+        }
+
+        /* Footer styles */
+        footer {
+            background: var(--primary);
+            padding: 1.5rem;
+            text-align: center;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            width: 100%;
+            margin-top: auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: var(--primary-dark);
+            clip-path: ellipse(50% 50% at 50% 100%);
+            z-index: 0;
+            animation: wave 5s ease-in-out infinite;
+        }
+
+        footer p {
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Typography */
+        .prose h1, .prose h2, .prose h3 {
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        .prose p {
+            color: var(--text-light);
+            line-height: 1.75;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">AI Article Generator</a>
+        <input type="checkbox" id="menu-bar">
+        <label class="menu-label" for="menu-bar">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
+        <nav class="navbar">
+            <ul>
+                <li><a href="/">Welcome {{ user.username }}</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/blog-list">Saved Blog Posts</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center flex-grow py-6">
+        <div class="max-w-4xl w-full p-6 card fade-in" id="main-card">
+            <!-- Introduction section -->
+            <div class="text-center mb-12 fade-in">
+                <h2 class="text-4xl font-bold mb-4 tracking-tight">AI Article Generator</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                    Craft stunning blog articles from YouTube videos with cutting-edge AI. Simply paste a link below and unleash your creativity!
+                </p>
+            </div>
+
+            <!-- YouTube link input section -->
+            <div class="mb-16 fade-in" style="animation-delay: 0.2s;">
+                <h3 class="text-2xl font-semibold text-center mb-6">Enter YouTube Video Link</h3>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input
+                        id="youtubeLink"
+                        type="url"
+                        placeholder="Paste YouTube Link..."
+                        class="flex-grow p-4 text-sm text-gray-700"
+                    >
+                    <button
+                        id="generateBlogButton"
+                        class="px-8 py-4 text-white text-sm"
+                    >
+                        Generate
+                    </button>
+                </div>
+                <div id="error-message" class="error-message mt-4" style="display: none;">
+                    <span id="error-text"></span>
+                    <span class="close-btn" onclick="this.parentElement.classList.remove('visible'); this.parentElement.style.display='none';">✕</span>
+                </div>
+            </div>
+
+            <!-- Loading circle -->
+            <div style="display: none;" id="loading-circle" class="load"></div>
+
+            <!-- Generated Blog Display Section -->
+            <section class="mt-16 fade-in" style="animation-delay: 0.4s;">
+                <h3 class="text-2xl font-semibold mb-6">Generated Blog Article</h3>
+                <div id="blogContent" class="prose prose-lg text-gray-700 max-w-none">
+                    <!-- Blog content will be inserted here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="fade-in" style="animation-delay: 0.7s;">
+        <p>From Susanna Smbatyan and Irina Karamyan, UFAR 2025</p>
+    </footer>
+
+    <script>
+        // Toggle mobile menu
+        document.getElementById('menu-bar').addEventListener('change', function () {
+            document.querySelector('.navbar').classList.toggle('active', this.checked);
+        });
+
+        // 3D tilt effect on card
+        const card = document.getElementById('main-card');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        });
+
+        // Real-time input validation for YouTube link
+        const youtubeLinkInput = document.getElementById('youtubeLink');
+        youtubeLinkInput.addEventListener('input', function () {
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+            if (youtubeRegex.test(this.value)) {
+                this.classList.add('valid');
+                this.classList.remove('invalid');
+            } else {
+                this.classList.add('invalid');
+                this.classList.remove('valid');
+            }
+        });
+
+        // Generate blog functionality
+        document.getElementById('generateBlogButton').addEventListener('click', async () => {
+            const youtubeLink = document.getElementById('youtubeLink').value;
+            const blogContent = document.getElementById('blogContent');
+            const loadingCircle = document.getElementById('loading-circle');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            if (youtubeLink) {
+                const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+                if (!youtubeRegex.test(youtubeLink)) {
+                    errorText.textContent = 'Please enter a valid YouTube link.';
+                    errorMessage.style.display = 'block';
+                    errorMessage.classList.add('visible');
+                    return;
+                }
+
+                loadingCircle.style.display = 'block';
+                blogContent.innerHTML = ''; // Clear previous content
+                errorMessage.style.display = 'none';
+                errorMessage.classList.remove('visible');
+
+                const endpointUrl = '/generate-blog/';
+
+                try {
+                    const response = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ link: youtubeLink })
+                    });
+
+                    const data = await response.json();
+                    blogContent.innerHTML = data.content;
+                } catch (error) {
+                    console.error("Error occurred:", error);
+                    errorText.textContent = 'Something went wrong. Please try again later.';
+                    errorMessage.style.display = 'block';
+                    errorMessage.classList.add('visible');
+                } finally {
+                    loadingCircle.style.display = 'none';
+                }
+            } else {
+                errorText.textContent = 'Please enter a YouTube link.';
+                errorMessage.style.display = 'block';
+                errorMessage.classList.add('visible');
+            }
+        });
+    </script>
+</body>
+</html>
